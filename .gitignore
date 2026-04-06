@@ -1,0 +1,17 @@
+# --- Gitの無視リスト（絶対にGitHubに送らないファイル） ---
+
+# Python関連の不要ファイル
+__pycache__/
+*.pyc
+
+# 仮想環境
+venv/
+
+# フロントエンドの不要ファイル
+node_modules/
+
+# 🛑 超重要：パスワード・鍵ファイル 🛑
+backend/firebase-credentials.json
+frontend/.env.development
+frontend/.env.production
+.env

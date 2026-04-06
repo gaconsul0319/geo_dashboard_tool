@@ -1,0 +1,7 @@
+[theme]
+# 全体の背景色（白）
+backgroundColor = "#FFFFFF"
+# サイドバーなどのサブ背景色（企画書ツールのような濃紺に設定）
+secondaryBackgroundColor = "#1A1D2D"
+# 全体の文字色（濃いグレー）
+textColor = "#333333"
