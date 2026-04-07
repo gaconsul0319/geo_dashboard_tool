@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios' 
+import api from '../api' // ←★axiosの代わりにapi.jsを読み込む
 
 const router = useRouter()
 
@@ -27,8 +27,8 @@ const translateStatus = (status) => {
 // バックエンドの「受付窓口」にデータを取りに行く関数
 const fetchCampaigns = async () => {
   try {
-    // さっき作ったFastAPIの窓口（ポート8000番）にリクエストを送る
-    const response = await axios.get('http://127.0.0.1:8000/api/jobs')
+    // ★ api.jsが自動で正しいURLのプレフィックスをつけてくれるので、後半部分だけでOK！
+    const response = await api.get('/api/jobs')
     
     if (response.data.status === 'success') {
       // バックエンドから届いたデータを、画面に表示しやすい形に変換して箱（campaigns）に入れる
@@ -61,8 +61,8 @@ const deleteCampaign = async (id, name) => {
   }
 
   try {
-    // 2. バックエンドの「削除用窓口」にIDを送って削除をお願いする
-    const response = await axios.delete(`http://127.0.0.1:8000/api/jobs/${id}`)
+    // ★ ここも api に変更し、URLをスッキリさせます
+    const response = await api.delete(`/api/jobs/${id}`)
     
     if (response.data.status === 'success') {
       alert("削除が完了しました！")
