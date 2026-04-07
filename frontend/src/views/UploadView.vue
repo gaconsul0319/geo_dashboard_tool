@@ -19,6 +19,7 @@ const handleFileSelect = (e) => {
 };
 
 // アップロード（送信）ボタンが押された時の処理
+// アップロード（送信）ボタンが押された時の処理
 const handleUpload = async () => {
   if (!selectedFile.value) {
     alert('CSVファイルを選択してください。');
@@ -26,35 +27,46 @@ const handleUpload = async () => {
   }
   
   isUploading.value = true;
-  uploadMessage.value = 'アップロード中...';
-  // 【ログ】送信開始時
-  console.log('[UploadStart] バックエンドへの送信を開始します...');
+  uploadMessage.value = 'アップロード準備中...';
 
-  // フォームデータを作成（ファイルを包む箱）
-  const formData = new FormData();
-  formData.append('file', selectedFile.value);
+  const file = selectedFile.value;
+  // 38MBなどの巨大ファイルを「5MB」のブロックに切り分ける設定
+  const CHUNK_SIZE = 5 * 1024 * 1024; 
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
   try {
-    // バックエンドのAPIへ送信
-    const response = await api.post('/api/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    let finalResponse = null;
 
-    // 【ログ】送信成功時
-    console.log('[UploadSuccess] サーバーからのレスポンス:', response.data);
-    uploadMessage.value = response.data.message;
-    alert(`アップロード成功: ${response.data.message}`);
+    // ブロックの数だけ送信を繰り返す
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end); // ファイルを切り取る
+
+      // 送信用の箱（FormData）に、切り取ったパーツと「何番目のパーツか」の情報を入れる
+      const formData = new FormData();
+      formData.append('file', chunk);
+      formData.append('filename', file.name);
+      formData.append('chunkIndex', i);
+      formData.append('totalChunks', totalChunks);
+
+      uploadMessage.value = `送信中... (${i + 1}/${totalChunks})`;
+      console.log(`[Upload] チャンク ${i + 1}/${totalChunks} を送信中...`);
+
+      // バックエンドへ送信
+      finalResponse = await api.post('/api/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+
+    // すべてのパーツの送信が終わった時の処理
+    console.log('[UploadSuccess] サーバーからのレスポンス:', finalResponse.data);
+    uploadMessage.value = finalResponse.data.message;
+    alert(`アップロード成功: ${finalResponse.data.message}`);
     
   } catch (error) {
     // 【ログ】エラー発生時
-    console.error('[UploadError] 通信に失敗しました:');
-    if (error.response) {
-      console.error(' - サーバー応答:', error.response.status, error.response.data);
-    } else {
-      console.error(' - エラー詳細:', error.message);
-    }
+    console.error('[UploadError] 通信に失敗しました:', error);
     uploadMessage.value = 'エラーが発生しました。コンソールを確認してください。';
     alert('エラーが発生しました。詳細はブラウザのコンソール(F12)を確認してください。');
   } finally {

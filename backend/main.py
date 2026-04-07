@@ -1,13 +1,17 @@
+import os
+import tempfile
 import logging
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import logging
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
 from datetime import datetime
 import random # 追加：ダミーデータを生成するための標準ライブラリ
 from routers import jobs
 from routers import export
+
+# ログの設定
+logging.basicConfig(level=logging.INFO)
 
 # ログの設定
 logging.basicConfig(level=logging.INFO)
@@ -43,47 +47,70 @@ app.add_middleware(
 )
 
 @app.post("/api/upload")
-async def upload_csv(file: UploadFile = File(...)):
-    logger.info(f"--- アップロード開始: {file.filename} ---")
-    
+async def upload_csv_chunk(
+    file: UploadFile = File(...),
+    filename: str = Form(...),
+    chunkIndex: int = Form(...),
+    totalChunks: int = Form(...)
+):
+    logger.info(f"--- チャンク受信開始: {filename} ({chunkIndex + 1}/{totalChunks}) ---")
     try:
-        # 1. ファイルの読み込みと行数のカウント
-        content = await file.read()
-        lines = content.decode("utf-8").splitlines()
-        id_count = len(lines)
-        logger.info(f"ファイルの読み込み成功: {id_count} 件")
-        
-        # 2. Cloud Storage（倉庫）へ実際のファイルを保存
-        bucket = storage.bucket() 
-        storage_path = f"csv_uploads/{file.filename}" 
-        blob = bucket.blob(storage_path)
-        
-        blob.upload_from_string(content, content_type='text/csv')
-        logger.info(f"Cloud Storageにファイルを保存しました: {storage_path}")
+        # 一時ファイルの保存場所を準備（同時アップロードが混ざらないよう、ファイル名で区別）
+        temp_file_path = os.path.join(tempfile.gettempdir(), f"temp_{filename}")
 
-        # 3. Firestore（データベース）に保存するメタデータの作成
-        upload_record = {
-            "filename": file.filename,
-            "id_count": id_count,
-            "storage_path": storage_path, 
-            "upload_time": datetime.now().isoformat(),
-            "status": "completed"
-        }
-        
-        # 4. Firestoreの「uploads」コレクションに記録を保存
-        doc_ref = db.collection("uploads").document()
-        doc_ref.set(upload_record)
-        logger.info(f"Firestoreに記録を保存しました。ドキュメントID: {doc_ref.id}")
-        
-        return {
-            "status": "success",
-            "filename": file.filename,
-            "count": id_count,
-            "message": f"{id_count}件のADIDを受理し、本体をStorageに、記録をデータベースに保存しました。"
-        }
+        # 最初のパーツ（チャンク0）が届いた時、古いゴミファイルがあれば消しておく
+        if chunkIndex == 0 and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+        # 届いたパーツを一時ファイルに継ぎ足していく（追記モード: ab）
+        with open(temp_file_path, "ab") as f:
+            content = await file.read()
+            f.write(content)
+
+        # もしこれが「最後のパーツ」だったら、合体完了の処理を行う
+        if chunkIndex == totalChunks - 1:
+            logger.info(f"全チャンクの受信完了。Storageへの保存を開始します: {filename}")
+
+            # 合体した完全なファイルを読み込む
+            with open(temp_file_path, "rb") as f:
+                final_content = f.read()
+
+            # 行数をカウント
+            lines = final_content.decode("utf-8").splitlines()
+            id_count = len(lines)
+
+            # Cloud Storageに保存
+            bucket = storage.bucket() 
+            storage_path = f"csv_uploads/{filename}" 
+            blob = bucket.blob(storage_path)
+            blob.upload_from_string(final_content, content_type='text/csv')
+
+            # Firestoreにメタデータを記録
+            upload_record = {
+                "filename": filename,
+                "id_count": id_count,
+                "storage_path": storage_path, 
+                "upload_time": datetime.now().isoformat(),
+                "status": "completed"
+            }
+            doc_ref = db.collection("uploads").document()
+            doc_ref.set(upload_record)
+            
+            # 使い終わった一時ファイルをパソコン(サーバー)から削除
+            os.remove(temp_file_path)
+
+            logger.info("ファイルの結合と保存がすべて完了しました！")
+            return {
+                "status": "success",
+                "message": f"{id_count}件のデータを結合し、保存が完了しました。"
+            }
+
+        # まだ途中パーツの場合は、状況だけを返す
+        return {"status": "processing", "message": f"チャンク {chunkIndex+1}/{totalChunks} の受信完了"}
+
     except Exception as e:
-        logger.error(f"エラー発生: {str(e)}")
-        raise HTTPException(status_code=500, detail="処理に失敗しました。")
+        logger.error(f"チャンク処理中にエラー発生: {str(e)}")
+        raise HTTPException(status_code=500, detail="ファイルのアップロード処理に失敗しました。")
 
 @app.get("/api/analysis")
 async def get_analysis_data():
