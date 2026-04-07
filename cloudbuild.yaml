@@ -36,6 +36,7 @@ steps:
     args:
       - '-c'
       - |
+        export GOOGLE_APPLICATION_CREDENTIALS="../backend/firebase-credentials.json"
         if [ "$BRANCH_NAME" = "main" ]; then
           npx firebase-tools deploy --only hosting:ga-geo-viewer --project geo-viewer-app
         else
