@@ -1,5 +1,5 @@
 # 1. 土台となるNode.jsの環境を用意します
-FROM node:18-alpine
+FROM node:22-alpine
 
 # 2. サーバーの中での作業場所を /app に決めます
 WORKDIR /app
