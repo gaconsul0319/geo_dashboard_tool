@@ -41,3 +41,7 @@ steps:
 
 # タイムアウト時間（処理に時間がかかる場合に備えて長めに設定）
 timeout: '1200s'
+
+# ログの保存先をCloud Loggingに指定（サービスアカウントを使用する場合に必須）
+options:
+  logging: CLOUD_LOGGING_ONLY
