@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import api from '../api'; // 通信共通設定を読み込み
+import api from '../api'
 
 // 状態管理用の変数
 const selectedFile = ref(null);
@@ -36,9 +36,11 @@ const handleUpload = async () => {
 
   try {
     // バックエンドのAPIへ送信
-    const response = await api.post('/api/upload-csv', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const response = await api.post('/api/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
 
     // 【ログ】送信成功時
     console.log('[UploadSuccess] サーバーからのレスポンス:', response.data);
