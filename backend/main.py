@@ -42,7 +42,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/api/upload-csv")
+@app.post("/api/upload")
 async def upload_csv(file: UploadFile = File(...)):
     logger.info(f"--- アップロード開始: {file.filename} ---")
     
