@@ -33,7 +33,10 @@ app.include_router(export.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://geo-frontend-53744839093.asia-northeast1.run.app" # ←この1行を追加
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
