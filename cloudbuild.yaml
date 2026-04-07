@@ -36,8 +36,11 @@ steps:
     args:
       - '-c'
       - |
-        export GOOGLE_APPLICATION_CREDENTIALS="../backend/firebase-credentials.json"
-        npx firebase-tools deploy --only hosting:ga-geo-viewer-test --project geo-viewer-app
+        if [ "$BRANCH_NAME" = "main" ]; then
+          npx firebase-tools deploy --only hosting:ga-geo-viewer --project geo-viewer-app
+        else
+          npx firebase-tools deploy --only hosting:ga-geo-viewer-test --project geo-viewer-app
+        fi
 
 # タイムアウト時間（処理に時間がかかる場合に備えて長めに設定）
 timeout: '1200s'
