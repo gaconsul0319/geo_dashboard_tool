@@ -85,7 +85,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import axios from 'axios'; // フェーズ3で導入済みの、通信を行うための道具
+import api from '../api';// フェーズ3で導入済みの、通信を行うための道具
 
 // 3つのグラフコンポーネントを読み込む
 import BarChart from '../components/BarChart.vue';
@@ -98,11 +98,9 @@ const apiData = ref(null);
 // 画面が開いた瞬間に「自動で1回だけ実行される」処理
 onMounted(async () => {
   try {
-    // 会社ルール：URLは直接書かず、環境変数（.env）から取得する（無ければローカルの8000番を使う設定）
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
     
-    // バックエンドの「窓口」にデータを注文（リクエスト）する
-    const response = await axios.get(`${baseUrl}/api/analysis`);
+    /// ★ api を使って、後半のパスだけを指定します
+    const response = await api.get('/api/analysis');
     
     // 受け取ったデータを入れ物に保存
     apiData.value = response.data;

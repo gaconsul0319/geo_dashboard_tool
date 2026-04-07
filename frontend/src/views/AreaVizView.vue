@@ -100,7 +100,7 @@ import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { Deck } from '@deck.gl/core';
 import { HeatmapLayer, HexagonLayer } from '@deck.gl/aggregation-layers';
 import { ScatterplotLayer } from '@deck.gl/layers';
-import axios from 'axios';
+import api from '../api';
 
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -179,10 +179,9 @@ watch([layerType, showPoi, applyKAnonymity], () => {
 
 onMounted(async () => {
   const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
   try {
-    const response = await axios.get(`${baseUrl}/api/map-data`);
+    const response = await api.get('/api/map-data');
     mapData.value = response.data.data;
     console.log('[API成功] 地図データの取得が完了しました');
   } catch (error) {
