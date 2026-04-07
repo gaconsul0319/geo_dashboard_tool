@@ -39,7 +39,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://geo-frontend-53744839093.asia-northeast1.run.app" # ←この1行を追加
+        "https://ga-geo-viewer-test.web.app", # テスト環境
+        "https://ga-geo-viewer.web.app"       # 本番環境
     ],
     allow_credentials=True,
     allow_methods=["*"],
