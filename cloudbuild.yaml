@@ -1,0 +1,43 @@
+# Cloud Build（クラウド上のロボット）への作業指示書
+
+steps:
+  # 1. 金庫（Secret Manager）からFirebaseの合鍵を取り出し、backendフォルダに配置する
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'gcloud secrets versions access latest --secret="FIREBASE_CREDENTIALS" > backend/firebase-credentials.json'
+
+  # 2. 金庫からMapboxの合鍵を取り出し、フロントエンド用の環境変数ファイルに書き込む
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'echo "VITE_MAPBOX_ACCESS_TOKEN=$(gcloud secrets versions access latest --secret="MAPBOX_SECRET_TOKEN")" > frontend/.env.production'
+
+  # 3. バックエンドのコンテナ（サーバー環境）を組み立てる
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/geo-backend', './backend']
+
+  # 4. フロントエンドのコンテナを組み立てる
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/geo-frontend', './frontend']
+
+  # 5. 組み立てた2つのコンテナをGCPの保管庫にプッシュ（送信）する
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/geo-backend']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/geo-frontend']
+
+  # 6. バックエンドをCloud Runサーバーに配置して公開する
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: ['run', 'deploy', 'geo-backend', '--image', 'gcr.io/$PROJECT_ID/geo-backend', '--region', 'asia-northeast1', '--allow-unauthenticated']
+
+  # 7. フロントエンドをCloud Runサーバーに配置して公開する
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: ['run', 'deploy', 'geo-frontend', '--image', 'gcr.io/$PROJECT_ID/geo-frontend', '--region', 'asia-northeast1', '--allow-unauthenticated']
+
+# タイムアウト時間（処理に時間がかかる場合に備えて長めに設定）
+timeout: '1200s'
