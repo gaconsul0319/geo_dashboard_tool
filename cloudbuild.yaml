@@ -1,10 +1,10 @@
 steps:  
-# 1. 金庫（Secret Manager）からFirebaseの合鍵を取り出し、backendフォルダに配置する
+  # 1. 金庫（Secret Manager）からFirebaseの合鍵を取り出し、backendフォルダに配置する
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'gcloud secrets versions access latest --secret=projects/geo-viewer-app-492516/secrets/FIREBASE_CREDENTIALS/versions/latest > backend/firebase-credentials.json'
+      - 'gcloud secrets versions access latest --secret=FIREBASE_CREDENTIALS > backend/firebase-credentials.json'
 
   # 2. 金庫からMapboxの合鍵を取り出し、APIのURLと一緒に環境変数に書き込む
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -12,7 +12,7 @@ steps:
     args:
       - '-c'
       - |
-        echo "VITE_MAPBOX_ACCESS_TOKEN=$(gcloud secrets versions access latest --secret=projects/geo-viewer-app-492516/secrets/MAPBOX_SECRET_TOKEN/versions/latest)" > frontend/.env.production
+        echo "VITE_MAPBOX_ACCESS_TOKEN=$(gcloud secrets versions access latest --secret=MAPBOX_SECRET_TOKEN)" > frontend/.env.production
         echo "VITE_API_BASE_URL=https://geo-backend-53744839093.asia-northeast1.run.app" >> frontend/.env.production
 
   # 3. バックエンドのコンテナ（サーバー環境）を組み立てる
