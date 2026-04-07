@@ -66,7 +66,7 @@ async def upload_csv(file: UploadFile = File(...)):
             "filename": file.filename,
             "id_count": id_count,
             "storage_path": storage_path, 
-            "upload_time": datetime.now(), # ★ここでエラーが起きていました
+            "upload_time": firestore.SERVER_TIMESTAMP, 
             "status": "completed"
         }
         
