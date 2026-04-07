@@ -30,11 +30,10 @@ steps:
         npm run build
 
   # 6. フロントエンドをFirebase Hostingへデプロイする
-  # 6. フロントエンドをFirebase Hostingへデプロイする
   - name: 'node:20'
     dir: 'frontend'
     entrypoint: 'npx'
-    args: ['firebase-tools', 'deploy', '--only', 'hosting:ga-geo-viewer-test', '--project', '$PROJECT_ID']
+    args: ['firebase-tools', 'deploy', '--only', 'hosting:ga-geo-viewer-test', '--project', 'geo-viewer-app']
 
 # タイムアウト時間（処理に時間がかかる場合に備えて長めに設定）
 timeout: '1200s'
