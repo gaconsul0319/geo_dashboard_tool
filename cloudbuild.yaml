@@ -8,12 +8,14 @@ steps:
       - '-c'
       - 'gcloud secrets versions access latest --secret="FIREBASE_CREDENTIALS" > backend/firebase-credentials.json'
 
-  # 2. 金庫からMapboxの合鍵を取り出し、フロントエンド用の環境変数ファイルに書き込む
+  # 2. 金庫からMapboxの合鍵を取り出し、APIのURLと一緒に環境変数に書き込む
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'echo "VITE_MAPBOX_ACCESS_TOKEN=$(gcloud secrets versions access latest --secret="MAPBOX_SECRET_TOKEN")" > frontend/.env.production'
+      - |
+        echo "VITE_MAPBOX_ACCESS_TOKEN=$(gcloud secrets versions access latest --secret=\"MAPBOX_SECRET_TOKEN\")" > frontend/.env.production
+        echo "VITE_API_BASE_URL=https://geo-backend-53744839093.asia-northeast1.run.app" >> frontend/.env.production
 
   # 3. バックエンドのコンテナ（サーバー環境）を組み立てる
   - name: 'gcr.io/cloud-builders/docker'
